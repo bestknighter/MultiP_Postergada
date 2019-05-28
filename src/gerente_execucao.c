@@ -34,8 +34,7 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 	while( 1 ) {
 		// verifica se tem msgs pra receber, se sim
 			// se tiver que encaminhar alguma msg, faça
-			// se tiver de executar algum programa
-				// exec();
+			// se tiver de executar algum programa, exec();
 
 		int wstatus;
 		if( 0 != waitpid( -1, &wstatus, WNOHANG ) ) {
@@ -75,7 +74,7 @@ gerente_init_t* cria_gerentes( int topologia ) {
 		// Bit 1 = Face esquerda ou Face direita (Eixo Y)
 		// Bit 0 = Face próxima ou Face distante (Eixo X)
 		// i.e.:	0000 = Canto próximo esquerdo superior do cubo 0
-		// 			1010 = Canto próximo direito superior do cubo 1
+		// 			1111 = Canto distante direito inferior do cubo 1
 		for( int i = 0; i < 16; i++ ) {
 			gerentes[i].noVizinho[0] = gerentes[ i^0b0001 ].self;		// FLIP X
 			gerentes[i].noVizinho[1] = gerentes[ i^0b0010 ].self;		// FLIP Y
