@@ -37,7 +37,7 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 			// se tiver de executar algum programa, exec();
 
 		int wstatus;
-		if( 0 != waitpid( -1, &wstatus, WNOHANG ) ) {
+		if( 0 < waitpid( -1, &wstatus, WNOHANG ) ) {
 			end_exec();
 		}
 	}
