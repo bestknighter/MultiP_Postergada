@@ -25,6 +25,4 @@ typedef struct {
 
 gerente_init_t* cria_gerentes( int topologia );
 
-void gerente_loop( gerente_init_t dadosIniciais );
-
 #endif // GERENTE_EXECUCAO_H
