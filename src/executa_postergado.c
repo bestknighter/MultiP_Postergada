@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/stat.h>
 
 typedef struct {
     char strVal[21];
@@ -41,7 +42,7 @@ int main( int argc, char *argv[ ] )
   key = 2234;
 
 
-	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\%#o)\n", key, msgflg);
+	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\\%#o)\n", key, msgflg);
 
 	if ((msqid = msgget(key, msgflg)) < 0) {
 		perror("msgget");
@@ -96,7 +97,7 @@ bool can_exec(const char *file)
 
     if (stat(file, &st) < 0)
         return 0;
-    if ((st.st_mode & S_IEXEC) != 0)
+    if ((st.st_mode & S_IXUSR) != 0)
         return 1;
     return 0;
 }
