@@ -59,7 +59,7 @@ int main( int argc, char *argv[ ] )
     listTuples();
     sbuf.mtype = 1;
     (void) fprintf(stderr, "msggeet: msgget succeeded: msqid = %d\n", msqid);
-    (void) strcpy(sbuf.mtext, arq);
+    (void) strcpy(sbuf.mtext, tuple[0].strVal);
     (void) fprintf(stderr, "msgget: msgget succeeded: msqid = %d\n", msqid);
 
     buf_length = strlen(sbuf.mtext) + 1;
@@ -71,7 +71,7 @@ int main( int argc, char *argv[ ] )
       exit(1);
     }
     else
-      printf("Message: \"%s\" enviada\n", sbuf.mtext);
+      printf("Mensagem: \"%s\" enviada\n", sbuf.mtext);
 
     exit(0);
     //printf("%d\n",getpid());
