@@ -1,31 +1,4 @@
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-
-typedef struct {
-    char strVal[21];
-    int intVal;
-} tTuple;
-
-typedef struct msgbuf {
-	long mtype;
-	char mtext[128];
-} message_buf;
-
-static struct { char strVal[21]; int intVal; } tuple[10];
-static int tupleCount = 0;
-void delay(int number_of_seconds);
-bool can_exec(const char *file);
-static void listTuples(void);
-static void addTuple(char *str, int val);
-static void deleteTuple(char *str);
+#include "../include/executa_postergado.h"
 
 int main( int argc, char *argv[ ] )
 {
@@ -53,8 +26,8 @@ int main( int argc, char *argv[ ] )
 
   if (can_exec(arq)){
     printf("Arquivo executável válido! Nome do arquivo: %s\n", arq);
-    delay(sec);
-    printf("passaram %d segundos\n", sec);
+    //delay(sec);
+    //printf("passaram %d segundos\n", sec);
     addTuple(arq,sec);
     listTuples();
     sbuf.mtype = 1;
@@ -82,14 +55,14 @@ int main( int argc, char *argv[ ] )
 
   return 0;
 }
-
-void delay(int number_of_seconds)
-{
-    // Converter em microsegundos (10^6)
-    int milli_seconds = 1000000 * number_of_seconds;
-    clock_t start_time = clock();
-    while (clock() < start_time + milli_seconds);
-}
+// função delay nao vai ser utilizada aqui pelo que entendi
+// void delay(int number_of_seconds)
+// {
+//     // Converter em microsegundos (10^6)
+//     int milli_seconds = 1000000 * number_of_seconds;
+//     clock_t start_time = clock();
+//     while (clock() < start_time + milli_seconds);
+// }
 bool can_exec(const char *file)
 {
     struct stat st;
@@ -121,7 +94,7 @@ static void deleteTuple(char *str) {
     }
     if (index == tupleCount) return;
 
-    printf("Deleting '%s', mapped to %d\n", str, tuple[index].intVal);
+    printf("Deletando tupla executável nome '%s', com tempo %d segundos\n", str, tuple[index].intVal);
     if (index != tupleCount - 1) {
         strcpy(tuple[index].strVal, tuple[tupleCount - 1].strVal);
         tuple[index].intVal = tuple[tupleCount - 1].intVal;
