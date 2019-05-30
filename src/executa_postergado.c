@@ -1,32 +1,4 @@
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <sys/stat.h>
-
-typedef struct {
-    char strVal[21];
-    int intVal;
-} tTuple;
-
-typedef struct msgbuf {
-	long mtype;
-	char mtext[128];
-} message_buf;
-
-static struct { char strVal[21]; int intVal; } tuple[10];
-static int tupleCount = 0;
-void delay(int number_of_seconds);
-bool can_exec(const char *file);
-static void listTuples(void);
-static void addTuple(char *str, int val);
-static void deleteTuple(char *str);
+#include "../include/executa_postergado.h"
 
 int main( int argc, char *argv[ ] )
 {
@@ -40,7 +12,7 @@ int main( int argc, char *argv[ ] )
   size_t buf_length;
   char *msg;
   key = 2234;
-
+  char buffer[100];
 
 	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\\%#o)\n", key, msgflg);
 
@@ -54,13 +26,17 @@ int main( int argc, char *argv[ ] )
 
   if (can_exec(arq)){
     printf("Arquivo executável válido! Nome do arquivo: %s\n", arq);
-    delay(sec);
-    printf("passaram %d segundos\n", sec);
+    //delay(sec);
+    //printf("passaram %d segundos\n", sec);
     addTuple(arq,sec);
     listTuples();
+
+    sprintf(buffer, "%d", sec);
+    strcat(arq, " ");
+    strcat(arq, buffer);
     sbuf.mtype = 1;
     (void) fprintf(stderr, "msggeet: msgget succeeded: msqid = %d\n", msqid);
-    (void) strcpy(sbuf.mtext, tuple[0].strVal);
+    (void) strcpy(sbuf.mtext, arq);
     (void) fprintf(stderr, "msgget: msgget succeeded: msqid = %d\n", msqid);
 
     buf_length = strlen(sbuf.mtext) + 1;
@@ -83,14 +59,14 @@ int main( int argc, char *argv[ ] )
 
   return 0;
 }
-
-void delay(int number_of_seconds)
-{
-    // Converter em microsegundos (10^6)
-    int milli_seconds = 1000000 * number_of_seconds;
-    clock_t start_time = clock();
-    while (clock() < start_time + milli_seconds);
-}
+// delay nao vai ser usado aqui
+// void delay(int number_of_seconds)
+// {
+//     // Converter em microsegundos (10^6)
+//     int milli_seconds = 1000000 * number_of_seconds;
+//     clock_t start_time = clock();
+//     while (clock() < start_time + milli_seconds);
+// }
 bool can_exec(const char *file)
 {
     struct stat st;
