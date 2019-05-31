@@ -1,8 +1,10 @@
 #include "../include/escalonador.h"
+#include "../include/gerente_execucao.h"
 
-int main() {
+int main( int argc, char *argv[ ] ) {
 	int msqid;
 	key_t key;
+	int topologia = atoi(argv[1]);
 
 	key = 2234;
 
@@ -15,24 +17,25 @@ int main() {
 	if ((idsem = semget(0x1223, 1, IPC_CREAT|0x1ff)) < 0) {
     	printf("erro na criacao do sem\n");
      	exit(1);
-   	}
+  }
+
+	gerentes_execucao = cria_gerentes(topologia);
+	//setar eles como livre
 
  	// Receive an answer of message type 1.
-  	while (1) {
+  while (1) {
 		if (msgrcv(msqid, &rbuf, MSGSZ, 1, 0) < 0) {
 			perror("msgrcv");
 			exit(1);
 		}
-		else{
-			//signal(SIGALRM, executa_programa);
-			//alarm(get_seconds(&rbuf.mtext));
-			executa_programa(&rbuf);
-		}
+		//pegar o tempo da mensagem do rbuf
+		delay(5);
+		executa_programa(&rbuf);
 	}
 	exit(0);
 }
 
-void executa_programa(message_buf * msg_postergada) {
+void executa_programa() {
 	/*
 	lock(livre)
 		1-solicitar que todos os processos gerentes de execução executem o executavel
@@ -43,7 +46,9 @@ void executa_programa(message_buf * msg_postergada) {
 	unlock(livre)
 	*/
 	p_sem();
-		printf("^%s\n", msg_postergada->mtext);
+		printf("^%s\n", rbuf.mtext);
+		//verificar se os processos gerentes estão livres.
+		//solicita que todos os processos gerentes executem o programa.
 	v_sem();
 }
 
@@ -64,4 +69,11 @@ int v_sem() {
     operacao[0].sem_flg = 0;
     if ( semop(idsem, operacao, 1) < 0)
     	printf("erro no p=%d\n", errno);
+}
+
+void delay(int number_of_seconds) {
+    // Converter em microsegundos (10^6)
+    int milli_seconds = 1000000 * number_of_seconds;
+    clock_t start_time = clock();
+    while (clock() < start_time + milli_seconds);
 }

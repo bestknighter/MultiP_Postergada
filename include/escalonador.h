@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/msg.h>
 #include <signal.h>
+#include <time.h>
 
 // Declare the message structure.
 #define MSGSZ 128
@@ -26,9 +27,13 @@ message_buf rbuf;
 struct sembuf operacao[2];
 int idsem;
 
-void executa_programa(message_buf * msg_postergada);
+gerente_init_t* gerentes_execucao;
+
+void executa_programa();
 
 int p_sem();
 int v_sem();
+
+void delay(int number_of_seconds);
 
 #endif
