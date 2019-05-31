@@ -10,9 +10,10 @@ int main( int argc, char *argv[ ] )
   key_t key;
   message_buf sbuf;
   size_t buf_length;
-  char *msg;
+  char msg[80]="";
   key = 2234;
-  char buffer[100];
+  char bufferJob[50]="";
+  char bufferSec[50]="";
 
 	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\\%#o)\n", key, msgflg);
 
@@ -30,13 +31,16 @@ int main( int argc, char *argv[ ] )
     //printf("passaram %d segundos\n", sec);
     addTuple(arq,sec);
     listTuples();
-
-    sprintf(buffer, "%d", sec);
-    strcat(arq, " ");
-    strcat(arq, buffer);
+    sprintf(bufferSec, "%d", sec);
+    sprintf(bufferJob, "%d", tupleCount);
+    strcat(msg, bufferJob);
+    strcat(msg, " ");
+    strcat(msg, arq);
+    strcat(msg, " ");
+    strcat(msg, bufferSec);
     sbuf.mtype = 1;
     (void) fprintf(stderr, "msggeet: msgget succeeded: msqid = %d\n", msqid);
-    (void) strcpy(sbuf.mtext, arq);
+    (void) strcpy(sbuf.mtext, msg);
     (void) fprintf(stderr, "msgget: msgget succeeded: msqid = %d\n", msqid);
 
     buf_length = strlen(sbuf.mtext) + 1;
@@ -78,10 +82,12 @@ bool can_exec(const char *file)
     return 0;
 }
 static void listTuples(void) {
-    printf("==========\nNumero Job(?) %d\n", tupleCount);
+    printf("Job=%d, ", tupleCount);
     for (int i = 0; i < tupleCount; ++i)
-        printf("   [%s] -> %d\n", tuple[i].strVal, tuple[i].intVal);
-    puts("==========");
+        printf("arquivo=%s, delay=%d\n", tuple[i].strVal, tuple[i].intVal);
+}
+int returnTupleCount(void) {
+  return tupleCount;
 }
 
 static void addTuple(char *str, int val) {
@@ -98,7 +104,7 @@ static void deleteTuple(char *str) {
     }
     if (index == tupleCount) return;
 
-    printf("Deleting '%s', mapped to %d\n", str, tuple[index].intVal);
+    printf("Deletando tupla executável nome '%s', com tempo %d segundos\n", str, tuple[index].intVal);
     if (index != tupleCount - 1) {
         strcpy(tuple[index].strVal, tuple[tupleCount - 1].strVal);
         tuple[index].intVal = tuple[tupleCount - 1].intVal;
