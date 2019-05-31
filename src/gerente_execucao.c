@@ -8,9 +8,11 @@ extern key_t escalonadorMsqKey;
 extern int escalonadorMsqID;
 
 time_t start, end;
-pid_t proc;
+pid_t proc = 0;
 gerente_init_t dados;
 
+// Seria bom receber como argumento igual execl?
+// Ou melhor esperar e decidir como vamos fazer a comunicaçãoo disso? <- Acredito que seja a melhor opção
 void exec() {
 	if( 0 == (proc = fork()) ) {
 		// execl();
@@ -22,6 +24,7 @@ void exec() {
 void end_exec() {
 	end = time(NULL);
 	// avisa escalonador que terminou com tempo start e end
+	proc = 0;
 }
 
 void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
@@ -35,6 +38,7 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 		// verifica se tem msgs pra receber, se sim
 			// se tiver que encaminhar alguma msg, faça
 			// se tiver de executar algum programa, exec();
+			// não esquecer de verificar proc se está 0 ou não antes de dar exec.
 
 		int wstatus;
 		if( 0 < waitpid( -1, &wstatus, WNOHANG ) ) {
@@ -89,7 +93,7 @@ gerente_init_t* cria_gerentes( int topologia ) {
 			gerentes[i].noVizinho[3] = gerentes[ ((i%4)+3)%4 + 4*((int)i/4) ].self;		// LEFT
 		}
 	} else { // Fat Tree
-		// Como conectar um Fat Tree??
+		// Como conectar uma Fat Tree??
 	}
 
 	for( int i = 0; i < 16; i++ ) {
