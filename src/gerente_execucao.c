@@ -93,8 +93,39 @@ gerente_init_t* cria_gerentes( int topologia ) {
 			gerentes[i].noVizinho[2] = gerentes[ (i+4)%16 ].self;						// DOWN
 			gerentes[i].noVizinho[3] = gerentes[ ((i%4)+3)%4 + 4*((int)i/4) ].self;		// LEFT
 		}
-	} else { // Fat Tree
-		// Como conectar uma Fat Tree??
+	} else { // "Fat" Tree
+		//                   00
+		//        01                    02
+		//   03        04          05        06
+		// 07  08    09  10      11  12    13  14
+		gerentes[ 00 ].noVizinho[ 0 ] = gerentes[ 01 ].self;
+		gerentes[ 00 ].noVizinho[ 1 ] = gerentes[ 02 ].self;
+		gerentes[ 01 ].noVizinho[ 0 ] = gerentes[ 00 ].self;
+		gerentes[ 01 ].noVizinho[ 1 ] = gerentes[ 03 ].self;
+		gerentes[ 01 ].noVizinho[ 2 ] = gerentes[ 04 ].self;
+		gerentes[ 02 ].noVizinho[ 0 ] = gerentes[ 00 ].self;
+		gerentes[ 02 ].noVizinho[ 1 ] = gerentes[ 05 ].self;
+		gerentes[ 02 ].noVizinho[ 2 ] = gerentes[ 06 ].self;
+		gerentes[ 03 ].noVizinho[ 0 ] = gerentes[ 01 ].self;
+		gerentes[ 03 ].noVizinho[ 1 ] = gerentes[ 07 ].self;
+		gerentes[ 03 ].noVizinho[ 2 ] = gerentes[ 08 ].self;
+		gerentes[ 04 ].noVizinho[ 0 ] = gerentes[ 01 ].self;
+		gerentes[ 04 ].noVizinho[ 1 ] = gerentes[ 09 ].self;
+		gerentes[ 04 ].noVizinho[ 2 ] = gerentes[ 10 ].self;
+		gerentes[ 05 ].noVizinho[ 0 ] = gerentes[ 02 ].self;
+		gerentes[ 05 ].noVizinho[ 1 ] = gerentes[ 11 ].self;
+		gerentes[ 05 ].noVizinho[ 2 ] = gerentes[ 12 ].self;
+		gerentes[ 06 ].noVizinho[ 0 ] = gerentes[ 02 ].self;
+		gerentes[ 06 ].noVizinho[ 1 ] = gerentes[ 13 ].self;
+		gerentes[ 06 ].noVizinho[ 2 ] = gerentes[ 14 ].self;
+		gerentes[ 07 ].noVizinho[ 0 ] = gerentes[ 03 ].self;
+		gerentes[ 08 ].noVizinho[ 0 ] = gerentes[ 03 ].self;
+		gerentes[ 09 ].noVizinho[ 0 ] = gerentes[ 04 ].self;
+		gerentes[ 10 ].noVizinho[ 0 ] = gerentes[ 04 ].self;
+		gerentes[ 11 ].noVizinho[ 0 ] = gerentes[ 05 ].self;
+		gerentes[ 12 ].noVizinho[ 0 ] = gerentes[ 05 ].self;
+		gerentes[ 13 ].noVizinho[ 0 ] = gerentes[ 06 ].self;
+		gerentes[ 14 ].noVizinho[ 0 ] = gerentes[ 06 ].self;
 	}
 
 	for( int i = 0; i < 16; i++ ) {
