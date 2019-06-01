@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <unistd.h>
 
 #define HYPERCUBE 0
 #define TORUS 1

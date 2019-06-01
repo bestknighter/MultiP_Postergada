@@ -1,6 +1,11 @@
 #include "../include/escalonador.h"
 #include "../include/gerente_execucao.h"
 
+#include <string.h>
+
+key_t escalonadorMsqKey = 0x1123;
+int escalonadorMsqID;
+
 int main( int argc, char *argv[ ] ) {
 	int msqid;
 	key_t key;
@@ -8,8 +13,13 @@ int main( int argc, char *argv[ ] ) {
 
 	key = 2234;
 
+	if((escalonadorMsqID = msgget(escalonadorMsqKey, IPC_CREAT|0x1ff)) < 0) {
+		perror("msgget escalonador");
+		exit(1);	
+	}
+
+	/*msg do executa postergado*/
 	if ((msqid = msgget(key, 0666)) < 0) {   //não pode executar antes de criar a fila, ou seja, antes do executa_postergado
-		printf("erro na criacao\n");
 		perror("msgget");
 		exit(1);
 	}
@@ -19,7 +29,7 @@ int main( int argc, char *argv[ ] ) {
      	exit(1);
   }
 
-	gerentes_execucao = cria_gerentes(topologia);
+	gerente_init_t* gerentes_execucao = cria_gerentes(topologia);
 	//setar eles como livre
 
  	// Receive an answer of message type 1.
@@ -28,9 +38,9 @@ int main( int argc, char *argv[ ] ) {
 			perror("msgrcv");
 			exit(1);
 		}
-		//pegar o tempo da mensagem do rbuf
-		delay(5);
-		executa_programa(&rbuf);
+		int tempoEspera = buscarTempoEspera();
+		sleep(tempoEspera);
+		executa_programa();
 	}
 	exit(0);
 }
@@ -76,4 +86,11 @@ void delay(int number_of_seconds) {
     int milli_seconds = 1000000 * number_of_seconds;
     clock_t start_time = clock();
     while (clock() < start_time + milli_seconds);
+}
+
+int buscarTempoEspera() {
+	char delim[] = " ";
+	char *ptr = strtok(rbuf.mtext, delim);
+	ptr = strtok(NULL, delim);
+	return atoi(ptr);
 }

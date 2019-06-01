@@ -10,6 +10,8 @@
 #include <sys/msg.h>
 #include <sys/stat.h>
 
+#include <stdbool.h>
+
 typedef struct {
     char strVal[21];
     int intVal;
