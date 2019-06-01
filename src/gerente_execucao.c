@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/wait.h>
 
-#include "gerente_execucao.h"
+#include "../include/gerente_execucao.h"
 
 extern key_t escalonadorMsqKey;
 extern int escalonadorMsqID;

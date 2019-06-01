@@ -27,8 +27,6 @@ message_buf rbuf;
 struct sembuf operacao[2];
 int idsem;
 
-gerente_init_t* gerentes_execucao;
-
 void executa_programa();
 
 int p_sem();
