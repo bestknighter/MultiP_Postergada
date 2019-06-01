@@ -12,9 +12,9 @@ int main( int argc, char *argv[ ] )
   size_t buf_length;
   char *msg;
   key = 2234;
+  char buffer[100];
 
-
-	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\%#o)\n", key, msgflg);
+	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\\%#o)\n", key, msgflg);
 
 	if ((msqid = msgget(key, msgflg)) < 0) {
 		perror("msgget");
@@ -30,9 +30,13 @@ int main( int argc, char *argv[ ] )
     //printf("passaram %d segundos\n", sec);
     addTuple(arq,sec);
     listTuples();
+
+    sprintf(buffer, "%d", sec);
+    strcat(arq, " ");
+    strcat(arq, buffer);
     sbuf.mtype = 1;
     (void) fprintf(stderr, "msggeet: msgget succeeded: msqid = %d\n", msqid);
-    (void) strcpy(sbuf.mtext, tuple[0].strVal);
+    (void) strcpy(sbuf.mtext, arq);
     (void) fprintf(stderr, "msgget: msgget succeeded: msqid = %d\n", msqid);
 
     buf_length = strlen(sbuf.mtext) + 1;
@@ -55,7 +59,7 @@ int main( int argc, char *argv[ ] )
 
   return 0;
 }
-// função delay nao vai ser utilizada aqui pelo que entendi
+// delay nao vai ser usado aqui
 // void delay(int number_of_seconds)
 // {
 //     // Converter em microsegundos (10^6)
@@ -69,7 +73,7 @@ bool can_exec(const char *file)
 
     if (stat(file, &st) < 0)
         return 0;
-    if ((st.st_mode & S_IEXEC) != 0)
+    if ((st.st_mode & S_IXUSR) != 0)
         return 1;
     return 0;
 }
