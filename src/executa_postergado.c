@@ -27,8 +27,6 @@ int main( int argc, char *argv[ ] )
 
   if (can_exec(arq)){
     printf("Arquivo executável válido! Nome do arquivo: %s\n", arq);
-    //delay(sec);
-    //printf("passaram %d segundos\n", sec);
     addTuple(arq,sec);
     listTuples();
     sprintf(bufferSec, "%d", sec);
