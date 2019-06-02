@@ -2,6 +2,7 @@
 #include "../include/gerente_execucao.h"
 
 #include <string.h>
+#include <time.h>
 
 key_t escalonadorMsqKey = 0x1123;
 int escalonadorMsqID;
@@ -30,10 +31,9 @@ int main( int argc, char *argv[ ] ) {
   }
 
 	gerente_init_t* gerentes_execucao = cria_gerentes(topologia);
-	//setar eles como livre
 
- 	// Receive an answer of message type 1.
   while (1) {
+ 		/*Receive an answer of message type 1.*/
 		if (msgrcv(msqid, &rbuf, MSGSZ, 1, 0) < 0) {
 			perror("msgrcv");
 			exit(1);
@@ -42,39 +42,66 @@ int main( int argc, char *argv[ ] ) {
 		int jobID;
 		char *nomePrograma;
 
-		nomePrograma=buscarInfoMsgPostergada(&tempoEspera, &jobID, nomePrograma);
-		printf("tempoEspera: %d\n", tempoEspera);
-		printf("Num job: %d\n", jobID);
-		printf("Nome programa: %s\n", nomePrograma);
+		nomePrograma=buscar_info(&tempoEspera, &jobID, nomePrograma);
 
-		sleep(tempoEspera);
+		sleep(tempoEspera); //nao necessariamente que vai pegar o semaforo sera o primeiro da fila
 
 		p_sem();
 			executa_programa(jobID, nomePrograma); //funcao do gerente
-			//esperar a mensagem de todos os processos gerentes para liberar o semaforo
-			/*
-			while(gerente nao esta livre) {
-				msgrcv(recebe mensagem de termino dos processos).
-			}
-			*/
+			double makespan = espera_mensagens(gerentes_execucao);	
+			printf("job=%d, arquivo=%s, delay=%d segundos, makespan=%f segundos\n", jobID, nomePrograma, tempoEspera, makespan);	
 		v_sem();
 	}
 	exit(0);
 }
 
-char * buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma) {
+/*retorna makespan*/
+double espera_mensagens(gerente_init_t* gerentes_execucao) {
+	double makespan = 0.0;
+	for(int i=0; i < 16; i++) {
+		if(msgrcv(gerentes_execucao[i].self.msqID, &msg_termino, MSGSZ, 1, 0) < 0) {
+			perror("msgrcv mensagem termino");
+			exit(1);
+		}
+		makespan += tempo_execucao(msg_termino.mtext);
+	}
+	return makespan;	
+}
+
+/*busca os dados da mensagem recebida de um proc. ger. e calcula a 
+  diferenca de tempo do inicio e do fim da execucao.*/
+double tempo_execucao(char *msg_termino) {
+	char delim[] = " ";
+
+	/*busca o jobID*/
+	char *ptr = strtok(msg_termino, delim);
+	/*busca o gerenteID*/
+	ptr = strtok(NULL, delim);
+	/*busca o time_t_comeco*/
+	ptr = strtok(NULL, delim);
+	int totalSegundosInicio = atoi(ptr);
+	time_t start = (time_t)totalSegundosInicio;	
+	/*busca o time_t_fim*/
+	ptr = strtok(NULL, delim);
+	int totalSegundosFim = atoi(ptr);
+	time_t end = (time_t)totalSegundosFim;
+	/*Calculates the difference in seconds between beginning and end.*/
+	return difftime(end, start);
+}
+
+/*Busca o delay, o jobID e o nome do programa do char* recebido 
+  da mensagem do executa_postergado*/
+char * buscar_info(int *tempoEspera, int *jobID, char *nomePrograma) {
 	char delim[] = " ";
 
 	char *ptr = strtok(rbuf.mtext, delim);
 	*jobID = atoi(ptr);
-	printf("ptr1: %d\n", *jobID);
 
 	nomePrograma = strtok(NULL, delim);
-	printf("ptr2: %s\n", nomePrograma);
 
 	ptr = strtok(NULL, delim);
 	*tempoEspera = atoi(ptr);
-	printf("ptr3: %d\n", *tempoEspera);
+
    return nomePrograma;
 }
 
@@ -92,20 +119,20 @@ void executa_programa(int jobID, char* nomePrograma) {
 }
 
 int p_sem() {
-	operacao[0].sem_num = 0;
-  operacao[0].sem_op = 0;
-  operacao[0].sem_flg = 0;
-  operacao[1].sem_num = 0;
-  operacao[1].sem_op = 1;
-  operacao[1].sem_flg = 0;
-  if ( semop(idsem, operacao, 2) < 0)
-		printf("erro no p=%d\n", errno);
+    operacao[0].sem_num = 0;
+    operacao[0].sem_op = 0;
+    operacao[0].sem_flg = 0;
+    operacao[1].sem_num = 0;
+    operacao[1].sem_op = 1;
+    operacao[1].sem_flg = 0;
+    if ( semop(idsem, operacao, 2) < 0)
+        printf("erro no p=%d\n", errno);
 }
 
 int v_sem() {
-	operacao[0].sem_num = 0;
-  operacao[0].sem_op = -1;
-  operacao[0].sem_flg = 0;
-  if ( semop(idsem, operacao, 1) < 0)
-  	printf("erro no p=%d\n", errno);
+    operacao[0].sem_num = 0;
+    operacao[0].sem_op = -1;
+    operacao[0].sem_flg = 0;
+    if ( semop(idsem, operacao, 1) < 0)
+        printf("erro no p=%d\n", errno);
 }

@@ -60,8 +60,9 @@ int main( int argc, char *argv[ ] )
   }
 
   return 0;
+}
 
-bool can_exec(const char *file)
+bool can_exec(const char *file) 
 {
     struct stat st;
 
