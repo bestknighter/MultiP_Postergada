@@ -38,14 +38,46 @@ int main( int argc, char *argv[ ] ) {
 			perror("msgrcv");
 			exit(1);
 		}
-		int tempoEspera = buscarTempoEspera();
+		int tempoEspera;
+		int jobID;
+		char *nomePrograma;
+
+		buscarInfoMsgPostergada(&tempoEspera, &jobID, nomePrograma);
+		printf("tempoEspera: %d\n", tempoEspera);
+		printf("Num job: %d\n", jobID);
+		printf("Nome programa: %s\n", nomePrograma);
+
 		sleep(tempoEspera);
-		executa_programa();
+
+		p_sem();
+			executa_programa(jobID, nomePrograma); //funcao do gerente
+			//esperar a mensagem de todos os processos gerentes para liberar o semaforo
+			/*
+			while(gerente nao esta livre) {
+				msgrcv(recebe mensagem de termino dos processos).
+			}
+			*/
+		v_sem();
 	}
 	exit(0);
 }
 
-void executa_programa() {
+void buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma) {
+	char delim[] = " ";
+
+	char *ptr = strtok(rbuf.mtext, delim);
+	*jobID = atoi(ptr);
+	printf("ptr1: %d\n", *jobID);
+
+	nomePrograma = strtok(NULL, delim);
+	printf("ptr2: %s\n", nomePrograma);
+
+	ptr = strtok(NULL, delim);
+	*tempoEspera = atoi(ptr);
+	printf("ptr3: %d\n", *tempoEspera);
+}
+
+void executa_programa(int jobID, char* nomePrograma) {
 	/*
 	lock(livre)
 		1-solicitar que todos os processos gerentes de execução executem o executavel
@@ -55,42 +87,24 @@ void executa_programa() {
 		imprime informacoes da execucao
 	unlock(livre)
 	*/
-	p_sem();
 		printf("^%s\n", rbuf.mtext);
-		//verificar se os processos gerentes estão livres.
-		//solicita que todos os processos gerentes executem o programa.
-	v_sem();
 }
 
 int p_sem() {
 	operacao[0].sem_num = 0;
-    operacao[0].sem_op = 0;
-    operacao[0].sem_flg = 0;
-    operacao[1].sem_num = 0;
-    operacao[1].sem_op = 1;
-    operacao[1].sem_flg = 0;
-    if ( semop(idsem, operacao, 2) < 0)
+  operacao[0].sem_op = 0;
+  operacao[0].sem_flg = 0;
+  operacao[1].sem_num = 0;
+  operacao[1].sem_op = 1;
+  operacao[1].sem_flg = 0;
+  if ( semop(idsem, operacao, 2) < 0)
 		printf("erro no p=%d\n", errno);
 }
 
 int v_sem() {
 	operacao[0].sem_num = 0;
-    operacao[0].sem_op = -1;
-    operacao[0].sem_flg = 0;
-    if ( semop(idsem, operacao, 1) < 0)
-    	printf("erro no p=%d\n", errno);
-}
-
-void delay(int number_of_seconds) {
-    // Converter em microsegundos (10^6)
-    int milli_seconds = 1000000 * number_of_seconds;
-    clock_t start_time = clock();
-    while (clock() < start_time + milli_seconds);
-}
-
-int buscarTempoEspera() {
-	char delim[] = " ";
-	char *ptr = strtok(rbuf.mtext, delim);
-	ptr = strtok(NULL, delim);
-	return atoi(ptr);
+  operacao[0].sem_op = -1;
+  operacao[0].sem_flg = 0;
+  if ( semop(idsem, operacao, 1) < 0)
+  	printf("erro no p=%d\n", errno);
 }
