@@ -9,7 +9,6 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/stat.h>
-
 #include <stdbool.h>
 
 typedef struct {
