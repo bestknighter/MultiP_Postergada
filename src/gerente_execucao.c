@@ -27,9 +27,19 @@ struct msgBuf {
 gerente_init_t dados;
 job_t jobAtual;
 
+
+void execJob() {
+	if( 0 == (jobAtual.procPID = fork()) ) {
+		execl( jobAtual.program, jobAtual.program, (char*) NULL );
+	} else {
+		jobAtual.start = time(NULL);
+		dados.self.busy = 1;
+	}
+}
+
 int stringToJob( char* msg, job_t* job ) {
 	int IDSender;
-	sscanf( msg, "%d %s %d", &(job->jobID), &(job->program), &IDSender );
+	sscanf( msg, "%d %s %d", &(job->jobID), job->program, &IDSender );
 	return IDSender;
 }
 
@@ -44,21 +54,12 @@ void rcvJob( char* mtext ) {
 	job_t jobRecebido;
 	int IDSender = stringToJob( mtext, &jobRecebido );
 	if( jobRecebido.jobID != jobAtual.jobID ) {
-		for(int i = 0; i < dados.self.nVizinhos; i++ ) {
+		for(int i = 0; i < dados.nVizinhos; i++ ) {
 			if( dados.noVizinho[i].id == IDSender ) continue;
 			sendJob( dados.noVizinho[i].msqID, jobRecebido );
 		}
 		jobAtual = jobRecebido;
-		exec();
-	}
-}
-
-void exec() {
-	if( 0 == (jobAtual.procPID = fork()) ) {
-		execl( jobAtual.program, jobAtual.program, (char*) NULL );
-	} else {
-		jobAtual.start = time(NULL);
-		dados.self.busy = 1;
+		execJob();
 	}
 }
 
@@ -66,13 +67,13 @@ void end_exec() {
 	jobAtual.end = time(NULL);
 	struct msgBuf newMsg;
 	newMsg.mtype = MSG_END;
-	sprintf( newMsg.mtext, "%d %d %d %d", job.jobID, dados.self.id, (int)jobAtual.start, (int)jobAtual.end );
+	sprintf( newMsg.mtext, "%d %d %d %d", jobAtual.jobID, dados.self.id, (int)jobAtual.start, (int)jobAtual.end );
 	if( dados.self.id == 0 ) {
 		msgsnd( dados.escalonador.msqID, &newMsg, sizeof(newMsg.mtext), IPC_NOWAIT );
 	} else {
 		int vizinhoLowestID;
 		int lowestID = 99;
-		for( int i = 0; i < dados.self.nVizinhos; i++ ) {
+		for( int i = 0; i < dados.nVizinhos; i++ ) {
 			if( dados.noVizinho[i].id < lowestID ) vizinhoLowestID = i;
 		}
 		msgsnd( dados.noVizinho[vizinhoLowestID].msqID, &newMsg, sizeof(newMsg.mtext), IPC_NOWAIT );
@@ -97,13 +98,13 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 		if( -1 < msgrcv( dados.self.msqID, &msg, 64, 0, IPC_NOWAIT ) ) {
 			if( MSG_START == msg.mtype ) {
 				rcvJob( msg.mtext );
-			} else if( MSG_END == msg.mtext ) {
+			} else if( MSG_END == msg.mtype ) {
 				if( dados.self.id == 0 ) {
 					msgsnd( dados.escalonador.msqID, &msg, sizeof(msg.mtext), IPC_NOWAIT );
 				} else {
 					int vizinhoLowestID;
 					int lowestID = 99;
-					for( int i = 0; i < dados.self.nVizinhos; i++ ) {
+					for( int i = 0; i < dados.nVizinhos; i++ ) {
 						if( dados.noVizinho[i].id < lowestID ) vizinhoLowestID = i;
 					}
 					msgsnd( dados.noVizinho[vizinhoLowestID].msqID, &msg, sizeof(msg.mtext), IPC_NOWAIT );
@@ -172,64 +173,64 @@ gerente_init_t* cria_gerentes( int topologia ) {
 		//        01                    02
 		//   03        04          05        06
 		// 07  08    09  10      11  12    13  14
-		gerentes[ 00 ].nVizinhos = 2;
-		gerentes[ 00 ].noVizinho = calloc( 2, sizeof(gerente_metadados_t) );
-		gerentes[ 00 ].noVizinho[ 0 ] = gerentes[ 01 ].self;
-		gerentes[ 00 ].noVizinho[ 1 ] = gerentes[ 02 ].self;
-		gerentes[ 01 ].nVizinhos = 3;
-		gerentes[ 01 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
-		gerentes[ 01 ].noVizinho[ 0 ] = gerentes[ 00 ].self;
-		gerentes[ 01 ].noVizinho[ 1 ] = gerentes[ 03 ].self;
-		gerentes[ 01 ].noVizinho[ 2 ] = gerentes[ 04 ].self;
-		gerentes[ 02 ].nVizinhos = 3;
-		gerentes[ 02 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
-		gerentes[ 02 ].noVizinho[ 0 ] = gerentes[ 00 ].self;
-		gerentes[ 02 ].noVizinho[ 1 ] = gerentes[ 05 ].self;
-		gerentes[ 02 ].noVizinho[ 2 ] = gerentes[ 06 ].self;
-		gerentes[ 03 ].nVizinhos = 3;
-		gerentes[ 03 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
-		gerentes[ 03 ].noVizinho[ 0 ] = gerentes[ 01 ].self;
-		gerentes[ 03 ].noVizinho[ 1 ] = gerentes[ 07 ].self;
-		gerentes[ 03 ].noVizinho[ 2 ] = gerentes[ 08 ].self;
-		gerentes[ 04 ].nVizinhos = 3;
-		gerentes[ 04 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
-		gerentes[ 04 ].noVizinho[ 0 ] = gerentes[ 01 ].self;
-		gerentes[ 04 ].noVizinho[ 1 ] = gerentes[ 09 ].self;
-		gerentes[ 04 ].noVizinho[ 2 ] = gerentes[ 10 ].self;
-		gerentes[ 05 ].nVizinhos = 3;
-		gerentes[ 05 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
-		gerentes[ 05 ].noVizinho[ 0 ] = gerentes[ 02 ].self;
-		gerentes[ 05 ].noVizinho[ 1 ] = gerentes[ 11 ].self;
-		gerentes[ 05 ].noVizinho[ 2 ] = gerentes[ 12 ].self;
-		gerentes[ 06 ].nVizinhos = 3;
-		gerentes[ 06 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
-		gerentes[ 06 ].noVizinho[ 0 ] = gerentes[ 02 ].self;
-		gerentes[ 06 ].noVizinho[ 1 ] = gerentes[ 13 ].self;
-		gerentes[ 06 ].noVizinho[ 2 ] = gerentes[ 14 ].self;
-		gerentes[ 07 ].nVizinhos = 1;
-		gerentes[ 07 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 07 ].noVizinho[ 0 ] = gerentes[ 03 ].self;
-		gerentes[ 08 ].nVizinhos = 1;
-		gerentes[ 08 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 08 ].noVizinho[ 0 ] = gerentes[ 03 ].self;
-		gerentes[ 09 ].nVizinhos = 1;
-		gerentes[ 09 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 09 ].noVizinho[ 0 ] = gerentes[ 04 ].self;
+		gerentes[ 0 ].nVizinhos = 2;
+		gerentes[ 0 ].noVizinho = calloc( 2, sizeof(gerente_metadados_t) );
+		gerentes[ 0 ].noVizinho[ 0 ] = gerentes[ 1 ].self;
+		gerentes[ 0 ].noVizinho[ 1 ] = gerentes[ 2 ].self;
+		gerentes[ 1 ].nVizinhos = 3;
+		gerentes[ 1 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
+		gerentes[ 1 ].noVizinho[ 0 ] = gerentes[ 0 ].self;
+		gerentes[ 1 ].noVizinho[ 1 ] = gerentes[ 3 ].self;
+		gerentes[ 1 ].noVizinho[ 2 ] = gerentes[ 4 ].self;
+		gerentes[ 2 ].nVizinhos = 3;
+		gerentes[ 2 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
+		gerentes[ 2 ].noVizinho[ 0 ] = gerentes[ 0 ].self;
+		gerentes[ 2 ].noVizinho[ 1 ] = gerentes[ 5 ].self;
+		gerentes[ 2 ].noVizinho[ 2 ] = gerentes[ 6 ].self;
+		gerentes[ 3 ].nVizinhos = 3;
+		gerentes[ 3 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
+		gerentes[ 3 ].noVizinho[ 0 ] = gerentes[ 1 ].self;
+		gerentes[ 3 ].noVizinho[ 1 ] = gerentes[ 7 ].self;
+		gerentes[ 3 ].noVizinho[ 2 ] = gerentes[ 8 ].self;
+		gerentes[ 4 ].nVizinhos = 3;
+		gerentes[ 4 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
+		gerentes[ 4 ].noVizinho[ 0 ] = gerentes[ 1 ].self;
+		gerentes[ 4 ].noVizinho[ 1 ] = gerentes[ 9 ].self;
+		gerentes[ 4 ].noVizinho[ 2 ] = gerentes[ 10 ].self;
+		gerentes[ 5 ].nVizinhos = 3;
+		gerentes[ 5 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
+		gerentes[ 5 ].noVizinho[ 0 ] = gerentes[ 2 ].self;
+		gerentes[ 5 ].noVizinho[ 1 ] = gerentes[ 11 ].self;
+		gerentes[ 5 ].noVizinho[ 2 ] = gerentes[ 12 ].self;
+		gerentes[ 6 ].nVizinhos = 3;
+		gerentes[ 6 ].noVizinho = calloc( 3, sizeof(gerente_metadados_t) );
+		gerentes[ 6 ].noVizinho[ 0 ] = gerentes[ 2 ].self;
+		gerentes[ 6 ].noVizinho[ 1 ] = gerentes[ 13 ].self;
+		gerentes[ 6 ].noVizinho[ 2 ] = gerentes[ 14 ].self;
+		gerentes[ 7 ].nVizinhos = 1;
+		gerentes[ 7 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
+		gerentes[ 7 ].noVizinho[ 0 ] = gerentes[ 3 ].self;
+		gerentes[ 8 ].nVizinhos = 1;
+		gerentes[ 8 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
+		gerentes[ 8 ].noVizinho[ 0 ] = gerentes[ 3 ].self;
+		gerentes[ 9 ].nVizinhos = 1;
+		gerentes[ 9 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
+		gerentes[ 9 ].noVizinho[ 0 ] = gerentes[ 4 ].self;
 		gerentes[ 10 ].nVizinhos = 1;
 		gerentes[ 10 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 10 ].noVizinho[ 0 ] = gerentes[ 04 ].self;
+		gerentes[ 10 ].noVizinho[ 0 ] = gerentes[ 4 ].self;
 		gerentes[ 11 ].nVizinhos = 1;
 		gerentes[ 11 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 11 ].noVizinho[ 0 ] = gerentes[ 05 ].self;
+		gerentes[ 11 ].noVizinho[ 0 ] = gerentes[ 5 ].self;
 		gerentes[ 12 ].nVizinhos = 1;
 		gerentes[ 12 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 12 ].noVizinho[ 0 ] = gerentes[ 05 ].self;
+		gerentes[ 12 ].noVizinho[ 0 ] = gerentes[ 5 ].self;
 		gerentes[ 13 ].nVizinhos = 1;
 		gerentes[ 13 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 13 ].noVizinho[ 0 ] = gerentes[ 06 ].self;
+		gerentes[ 13 ].noVizinho[ 0 ] = gerentes[ 6 ].self;
 		gerentes[ 14 ].nVizinhos = 1;
 		gerentes[ 14 ].noVizinho = calloc( 1, sizeof(gerente_metadados_t) );
-		gerentes[ 14 ].noVizinho[ 0 ] = gerentes[ 06 ].self;
+		gerentes[ 14 ].noVizinho[ 0 ] = gerentes[ 6 ].self;
 	}
 
 	for( int i = 0; i < 16; i++ ) {
