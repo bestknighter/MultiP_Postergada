@@ -16,12 +16,14 @@ typedef struct {
 	pid_t pid;
 	key_t msqKey;
 	int msqID;
+	int busy;
 } gerente_metadados_t;
 
 typedef struct {
 	gerente_metadados_t self;
 	gerente_metadados_t escalonador;
-	gerente_metadados_t noVizinho[4];
+	int nVizinhos;
+	gerente_metadados_t *noVizinho;
 } gerente_init_t;
 
 gerente_init_t* cria_gerentes( int topologia );
