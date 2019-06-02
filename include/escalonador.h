@@ -32,6 +32,6 @@ void executa_programa();
 int p_sem();
 int v_sem();
 
-void buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma);
+char * buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma);
 
 #endif

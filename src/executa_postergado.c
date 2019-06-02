@@ -60,15 +60,7 @@ int main( int argc, char *argv[ ] )
   }
 
   return 0;
-}
-// delay nao vai ser usado aqui
-// void delay(int number_of_seconds)
-// {
-//     // Converter em microsegundos (10^6)
-//     int milli_seconds = 1000000 * number_of_seconds;
-//     clock_t start_time = clock();
-//     while (clock() < start_time + milli_seconds);
-// }
+
 bool can_exec(const char *file)
 {
     struct stat st;

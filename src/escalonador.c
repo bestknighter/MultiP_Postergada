@@ -15,7 +15,7 @@ int main( int argc, char *argv[ ] ) {
 
 	if((escalonadorMsqID = msgget(escalonadorMsqKey, IPC_CREAT|0x1ff)) < 0) {
 		perror("msgget escalonador");
-		exit(1);	
+		exit(1);
 	}
 
 	/*msg do executa postergado*/
@@ -42,7 +42,7 @@ int main( int argc, char *argv[ ] ) {
 		int jobID;
 		char *nomePrograma;
 
-		buscarInfoMsgPostergada(&tempoEspera, &jobID, nomePrograma);
+		nomePrograma=buscarInfoMsgPostergada(&tempoEspera, &jobID, nomePrograma);
 		printf("tempoEspera: %d\n", tempoEspera);
 		printf("Num job: %d\n", jobID);
 		printf("Nome programa: %s\n", nomePrograma);
@@ -62,7 +62,7 @@ int main( int argc, char *argv[ ] ) {
 	exit(0);
 }
 
-void buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma) {
+char * buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma) {
 	char delim[] = " ";
 
 	char *ptr = strtok(rbuf.mtext, delim);
@@ -75,6 +75,7 @@ void buscarInfoMsgPostergada(int *tempoEspera, int *jobID, char *nomePrograma) {
 	ptr = strtok(NULL, delim);
 	*tempoEspera = atoi(ptr);
 	printf("ptr3: %d\n", *tempoEspera);
+   return nomePrograma;
 }
 
 void executa_programa(int jobID, char* nomePrograma) {

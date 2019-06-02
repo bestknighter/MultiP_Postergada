@@ -24,7 +24,6 @@ typedef struct msgbuf {
 
 static struct { char strVal[21]; int intVal; } tuple[10];
 static int tupleCount = 0;
-void delay(int number_of_seconds);
 bool can_exec(const char *file);
 static void listTuples(void);
 static void addTuple(char *str, int val);
