@@ -111,7 +111,7 @@ void enviar_mensagem_postergado(int *jobID){
 	int msqid;
 	int msgflg = IPC_CREAT | 0666;
 	key_t key;
-	message_buf sbuf;
+	struct msgBuf sbuf;
 	size_t buf_length;
 
 	key = 2244;
