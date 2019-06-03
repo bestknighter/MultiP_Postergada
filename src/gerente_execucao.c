@@ -133,6 +133,17 @@ void end_exec() {
 }
 
 /**
+ * @brief Mata o processo filho e morre
+ * 
+ * @param x unused
+ */
+void shutdown( int x ) {
+	if( dados.self.busy ) kill( jobAtual.procID );
+	waitpid( -1, &wstatus, 0 );
+	exit(0);
+}
+
+/**
  * @brief loop principal de um gerente de execução
  * 
  * @param[in] dadosIniciais vetor com todos os dados iniciais existentes
@@ -324,6 +335,7 @@ gerente_init_t* cria_gerentes( int topologia ) {
 
 		int pid;
 		if( 0 == (pid = fork()) ) {
+			signal( SIGUSR1, shutdown );
 			gerente_loop( gerentes, i );
 		} else {
 			gerentes[i].self.pid = pid;
@@ -354,6 +366,7 @@ void executar_programa( int gerente0_msqID, int jobID, char* jobProgram ) {
  */
 void destroi_gerentes( gerente_init_t* gerentes ) {
 	for(int i = 0; i < 16; i++ ) {
+		kill( gerentes[i].self.pid, SIGUSR1 );
 		msgctl( gerentes[i].self.msqID, IPC_RMID, NULL ); // Destrói fila de mensagem
 		free( gerentes[i].noVizinho ); // Desaloca lista de vizinhos
 	}
