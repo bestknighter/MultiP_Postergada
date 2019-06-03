@@ -44,7 +44,7 @@ int p_sem();
 int v_sem();
 
 char * buscar_info(int *tempoEspera, int *jobID, char *nomePrograma);
-double espera_mensagens(gerente_init_t* gerentes_execucao);
+double esperar_mensagens();
 double tempo_execucao(char *msg_termino);
 
 #endif

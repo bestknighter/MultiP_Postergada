@@ -10,6 +10,9 @@
 #define TORUS 1
 #define FAT_TREE 2
 
+#define MSG_START 10 // Tipo de mensagem para começo de execução de programa
+#define MSG_END 11 // Tipo de mensagem para comunicação de tempo de execução
+
 /**
  * @brief Metainformações de cada processo
  */

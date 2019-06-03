@@ -6,9 +6,6 @@
 
 #include "../include/gerente_execucao.h"
 
-#define MSG_START 10 // Tipo de mensagem para começo de execução de programa
-#define MSG_END 11 // Tipo de mensagem para comunicação de tempo de execução
-
 // msqKey e msqID do escalonador (para uso em função que será chamada somente pelo escalonador)
 extern key_t escalonadorMsqKey;
 extern int escalonadorMsqID;
