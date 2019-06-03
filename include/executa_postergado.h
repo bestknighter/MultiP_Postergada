@@ -12,13 +12,13 @@
 #include <stdbool.h>
 
 typedef struct {
-    char strVal[21];
-    int intVal;
+  char strVal[21];
+  int intVal;
 } tTuple;
 
 typedef struct msgbuf {
-	long mtype;
-	char mtext[128];
+  long mtype;
+  char mtext[128];
 } message_buf;
 
 static struct { char strVal[21]; int intVal; } tuple[10];

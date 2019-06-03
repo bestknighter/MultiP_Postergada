@@ -17,11 +17,11 @@
  * @brief Metainformações de cada processo
  */
 typedef struct {
-	int id; /**< ID do nó */
-	pid_t pid; /**< PID do processo */
-	key_t msqKey; /**< Key da fila de mensagens do processo */
-	int msqID; /**< ID da fila de mensagens do processo */
-	int busy; /**< Indica se o gerente está executando ou não (útil somente para o escalonador) */
+  int id; /**< ID do nó */
+  pid_t pid; /**< PID do processo */
+  key_t msqKey; /**< Key da fila de mensagens do processo */
+  int msqID; /**< ID da fila de mensagens do processo */
+  int busy; /**< Indica se o gerente está executando ou não (útil somente para o escalonador) */
 } gerente_metadados_t;
 
 /**
@@ -31,10 +31,10 @@ typedef struct {
  * Do escalonador também caso o gerente seja de ID == 0.
  */
 typedef struct {
-	gerente_metadados_t self; /**< Metainformações de si mesmo */
-	gerente_metadados_t escalonador; /**< Metainformações do escalonador */
-	int nVizinhos; /**< Quantos vizinhos esse nó tem */
-	gerente_metadados_t *noVizinho; /**< Metainformações de cada vizinho */
+  gerente_metadados_t self; /**< Metainformações de si mesmo */
+  gerente_metadados_t escalonador; /**< Metainformações do escalonador */
+  int nVizinhos; /**< Quantos vizinhos esse nó tem */
+  gerente_metadados_t *noVizinho; /**< Metainformações de cada vizinho */
 } gerente_init_t;
 
 /**
