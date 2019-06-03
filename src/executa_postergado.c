@@ -1,7 +1,6 @@
 #include "../include/executa_postergado.h"
 
-int main( int argc, char *argv[ ] )
-{
+int main( int argc, char *argv[ ] ) {
   int cont;
   int sec = atoi(argv[1]);
   char *arq = argv[2];
@@ -15,17 +14,16 @@ int main( int argc, char *argv[ ] )
   char bufferJob[50]="";
   char bufferSec[50]="";
 
-	(void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\\%#o)\n", key, msgflg);
+  (void)fprintf(stderr, "\nmsgget: Calling msgget(%#1x,\\%#o)\n", key, msgflg);
 
-	if ((msqid = msgget(key, msgflg)) < 0) {
-		perror("msgget");
-		exit(1);
-	}
-	else
-		(void)fprintf(stderr, "msgget: msgget succeeded: msgqid = %d\n", msqid);
+  if( (msqid = msgget(key, msgflg)) < 0 ) {
+    perror("msgget");
+    exit(1);
+  } else
+    (void)fprintf(stderr, "msgget: msgget succeeded: msgqid = %d\n", msqid);
 
 
-  if (can_exec(arq)){
+  if( can_exec(arq) ) {
     printf("Arquivo executável válido! Nome do arquivo: %s\n", arq);
     addTuple(arq,sec);
     listTuples();
@@ -44,26 +42,23 @@ int main( int argc, char *argv[ ] )
     buf_length = strlen(sbuf.mtext) + 1;
 
     // Send a message.
-    if((msgsnd(msqid, &sbuf, buf_length, IPC_NOWAIT)) < 0){
+    if( (msgsnd(msqid, &sbuf, buf_length, IPC_NOWAIT)) < 0 ) {
       printf("%d, %ld, %s, %zu\n", msqid, sbuf.mtype, sbuf.mtext, buf_length);
       perror("msgsnd");
       exit(1);
-    }
-    else
+    } else
       printf("Mensagem: \"%s\" enviada\n", sbuf.mtext);
 
     exit(0);
     //printf("%d\n",getpid());
-  }
-  else{
+  } else {
     printf("Erro: Arquivo executável inválido!\n");
   }
 
   return 0;
 }
 
-bool can_exec(const char *file) 
-{
+bool can_exec(const char *file) {
     struct stat st;
 
     if (stat(file, &st) < 0)
@@ -72,11 +67,13 @@ bool can_exec(const char *file)
         return 1;
     return 0;
 }
+
 static void listTuples(void) {
     printf("Job=%d, ", tupleCount);
     for (int i = 0; i < tupleCount; ++i)
         printf("arquivo=%s, delay=%d\n", tuple[i].strVal, tuple[i].intVal);
 }
+
 int returnTupleCount(void) {
   return tupleCount;
 }

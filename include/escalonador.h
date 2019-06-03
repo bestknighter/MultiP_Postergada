@@ -22,15 +22,15 @@
 int topologia;
 
 typedef struct msgbuf {
-	long mtype;
-	char mtext[MSGSZ];
+  long mtype;
+  char mtext[MSGSZ];
 } message_buf;
 
 message_buf rbuf;
 
 typedef struct msgTerminoGerentes {
-	long mtype;
-	char mtext[64];
+  long mtype;
+  char mtext[64];
 } msg_termino_gerentes;
 
 msg_termino_gerentes msg_termino;
