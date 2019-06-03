@@ -9,7 +9,7 @@ key_t escalonadorMsqKey = 0x1123;
 int escalonadorMsqID;
 int executaPostergadoMsqID;
 gerente_init_t* gerentes_execucao;
-
+int lastJobID;
 void clear( int x );
 
 /**
@@ -51,11 +51,13 @@ int main( int argc, char *argv[ ] ) {
   char *nomePrograma;
 
   gerentes_execucao = cria_gerentes( topologia );
-  
+
   // Sobrescreve o comportamento do SIGINT somente para o escalonador
   signal( SIGINT, clear );
 
   while (1) {
+		enviar_mensagem_postergado(&lastJobID);
+
     /*Receive an answer of message type 1.*/
     if (msgrcv(executaPostergadoMsqID, &rbuf, MSGSZ, 1, 0) < 0) {
       fprintf( stderr, "msgrcv\n");
@@ -67,15 +69,15 @@ int main( int argc, char *argv[ ] ) {
     printf("tempo espera: %d\n", tempoEspera);
     printf("nome programa: %s\n", nomePrograma);
     printf("jobID: %d\n", jobID);
-
+		lastJobID=jobID;
     sleep(tempoEspera);
     //p_sem();
     executar_programa(gerentes_execucao[0].self.msqID, jobID, nomePrograma);
-    double makespan = esperar_mensagens();	
-    printf("job=%d, arquivo=%s, delay=%d segundos, makespan=%f segundos\n", jobID, nomePrograma, tempoEspera, makespan);	
+    double makespan = esperar_mensagens();
+    printf("job=%d, arquivo=%s, delay=%d segundos, makespan=%f segundos\n", jobID, nomePrograma, tempoEspera, makespan);
     //v_sem();
   }
-  
+
   exit(0);
 }
 
@@ -93,8 +95,41 @@ double esperar_mensagens() {
   }
   return makespan;
 }
+void enviar_mensagem_postergado(int *jobID){
+	char bufferJob[50];
+	sprintf(bufferJob, "%d", *jobID);
 
-/*busca os dados da mensagem recebida de um proc. ger. e calcula a 
+	int msqid;
+	int msgflg = IPC_CREAT | 0666;
+	key_t key;
+	message_buf sbuf;
+	size_t buf_length;
+
+	key = 2244;
+
+
+	if ((msqid = msgget(key, msgflg)) < 0) {
+		perror("msgget");
+		exit(1);
+	}
+	else
+
+	// We'll send message type 1
+	sbuf.mtype = 1;
+	(void) strcpy(sbuf.mtext, bufferJob);
+
+	buf_length = strlen(sbuf.mtext) + 1;
+
+	// Send a message.
+	if((msgsnd(msqid, &sbuf, buf_length, IPC_NOWAIT)) < 0){
+		perror("msgsnd");
+		exit(1);
+	}
+	//else
+		//printf("Message: \"%s\" Sent\n", sbuf.mtext);
+
+}
+/*busca os dados da mensagem recebida de um proc. ger. e calcula a
   diferenca de tempo do inicio e do fim da execucao.*/
 double tempo_execucao(char *msg) {
   printf("msg before: %s\n", msg);
@@ -168,7 +203,7 @@ void clear( int x ) {
   #ifdef DEBUG
   printf( "\n[ESCALONADOR]\tLimpando filas e liberando memória...\n" );
   #endif // DEBUG
-  
+
   destroi_gerentes( gerentes_execucao );
 
   // Destrói própria fila de mensagens

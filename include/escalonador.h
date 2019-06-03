@@ -46,5 +46,6 @@ int v_sem();
 char * buscar_info(int *tempoEspera, int *jobID, char *nomePrograma);
 double esperar_mensagens();
 double tempo_execucao(char *msg_termino);
+void enviar_mensagem_postergado(int *jobID);
 
 #endif
