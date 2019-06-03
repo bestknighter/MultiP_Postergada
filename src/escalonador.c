@@ -100,7 +100,7 @@ double esperar_mensagens() {
     }
     makespan += tempo_execucao(msgGerente.mtext);
   }
-  return makespan;
+  return makespan/total_proc;
 }
 
 /**
