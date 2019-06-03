@@ -16,9 +16,9 @@ int main( int argc, char* argv[] ) {
 	escalonadorMsqKey = 0x1111;
 	escalonadorMsqID = msgget( escalonadorMsqKey, IPC_CREAT|0x1ff );
 	gerentes = cria_gerentes( HYPERCUBE );
-    signal( SIGINT, clear );
-    
-    #ifdef DEBUG
+	signal( SIGINT, clear );
+	
+	#ifdef DEBUG
 	printf( "[ESCALONADOR]\tEnviando comando em 5s...\n" );
 	sleep(5);
 	#endif // DEBUG
@@ -27,9 +27,9 @@ int main( int argc, char* argv[] ) {
 	struct { long mtype; char mtext[64]; } msg;
 	while(1) {
 		if( -1 < msgrcv( escalonadorMsqID, &msg, 64, 0, 0 ) ) {
-		    #ifdef DEBUG
-		    printf( "[ESCALONADOR]\tRecebi a mensagem: \"%s\"\n", msg.mtext );
-		    #endif // DEBUG
+			#ifdef DEBUG
+			printf( "[ESCALONADOR]\tRecebi a mensagem: \"%s\"\n", msg.mtext );
+			#endif // DEBUG
 		}
 	}
 	int wstatus;
@@ -37,15 +37,13 @@ int main( int argc, char* argv[] ) {
 	return 0;
 }
 
-void clear(int x) {
-    #ifdef DEBUG
-	printf( "[ESCALONADOR]\tLimpando filas...\n" );
+void clear( int x ) {
+	#ifdef DEBUG
+	printf( "[ESCALONADOR]\tLimpando filas e liberando memória...\n" );
 	#endif // DEBUG
 	
-    for(int i = 0; i < 16; i++ ) {
-        msgctl( gerentes[i].self.msqID, IPC_RMID, NULL );
-    }
-    msgctl( escalonadorMsqID, IPC_RMID, NULL );
-    exit(1);
+	destroi_gerentes( gerentes );
+	msgctl( escalonadorMsqID, IPC_RMID, NULL );
+	exit( x );
 }
 
