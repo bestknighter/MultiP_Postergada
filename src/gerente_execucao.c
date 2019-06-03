@@ -135,7 +135,8 @@ void end_exec() {
  * @param x unused
  */
 void shutdown( int x ) {
-  if( dados.self.busy ) kill( jobAtual.procID );
+  if( dados.self.busy ) kill( jobAtual.procPID, SIGINT );
+  int wstatus;
   waitpid( -1, &wstatus, 0 );
   exit(0);
 }

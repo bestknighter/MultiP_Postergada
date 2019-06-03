@@ -3,9 +3,14 @@
 
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 key_t escalonadorMsqKey = 0x1123;
 int escalonadorMsqID;
+int executaPostergadoMsqID;
+gerente_init_t* gerentes_execucao;
+
+void clear( int x );
 
 /**
  * @brief Buffer de mensagens entre gerentes de processo
@@ -16,52 +21,61 @@ struct msgBuf {
 } msg; // Já cria uma variável global desse tipo
 
 int main( int argc, char *argv[ ] ) {
-  int executaPostergadoMsqID;
   key_t key;
+  if( argc != 2 ) {
+    fprintf( stderr, "Usage: escalonador <TOPOLOGIA>\n<TOPOLOGIA>:\t0 - Hypercube\n\t\t1 - Torus\n\t\t2 - Fat Tree\n" );
+    exit(1);
+  }
   topologia = atoi(argv[1]);
 
-  key = 2234;
+  key = 0x2234;
 
   if((escalonadorMsqID = msgget(escalonadorMsqKey, IPC_CREAT|0x1ff)) < 0) {
-    perror("msgget escalonador");
+    fprintf( stderr, "msgget escalonador\n");
     exit(1);
   }
 
   /*busca a fila de mensagem do executa postergado*/
-  if ((executaPostergadoMsqID = msgget(key, 0666)) < 0) { //não pode executar antes de criar a fila, ou seja, antes do executa_postergado
-    perror("msgget");
+  if ((executaPostergadoMsqID = msgget(key, IPC_CREAT|0x1ff)) < 0) { //não pode executar antes de criar a fila, ou seja, antes do executa_postergado
+    fprintf( stderr, "msgget: %d\n", errno);
     exit(1);
   }
 
   if ((idsem = semget(0x1223, 1, IPC_CREAT|0x1ff)) < 0) {
-      printf("erro na criacao do sem\n");
-      exit(1);
-    }
+    fprintf( stderr, "erro na criacao do sem\n");
+    exit(1);
+  }
 
-    int tempoEspera;
-    int jobID;
-    char *nomePrograma;
+  int tempoEspera;
+  int jobID;
+  char *nomePrograma;
 
-    while (1) {
+  gerentes_execucao = cria_gerentes( topologia );
+  
+  // Sobrescreve o comportamento do SIGINT somente para o escalonador
+  signal( SIGINT, clear );
+
+  while (1) {
     /*Receive an answer of message type 1.*/
     if (msgrcv(executaPostergadoMsqID, &rbuf, MSGSZ, 1, 0) < 0) {
-      perror("msgrcv");
+      fprintf( stderr, "msgrcv\n");
       exit(1);
     }
+
+    nomePrograma=buscar_info(&tempoEspera, &jobID, nomePrograma);
 
     printf("tempo espera: %d\n", tempoEspera);
     printf("nome programa: %s\n", nomePrograma);
     printf("jobID: %d\n", jobID);
 
-    nomePrograma=buscar_info(&tempoEspera, &jobID, nomePrograma);
     sleep(tempoEspera);
     //p_sem();
-      executar_programa(gerentes_execucao[0].self.msqID, jobID, nomePrograma);
-      double makespan = esperar_mensagens();	
-      printf("job=%d, arquivo=%s, delay=%d segundos, makespan=%f segundos\n", jobID, nomePrograma, tempoEspera, makespan);	
+    executar_programa(gerentes_execucao[0].self.msqID, jobID, nomePrograma);
+    double makespan = esperar_mensagens();	
+    printf("job=%d, arquivo=%s, delay=%d segundos, makespan=%f segundos\n", jobID, nomePrograma, tempoEspera, makespan);	
     //v_sem();
-
   }
+  
   exit(0);
 }
 
@@ -72,7 +86,7 @@ double esperar_mensagens() {
 
   for(int i=0; i < total_proc; i++) {
     if(msgrcv(escalonadorMsqID, &msg, sizeof(msg.mtext), MSG_END, 0) < 0) {
-      perror("msgrcv mensagem termino");
+      fprintf( stderr, "msgrcv mensagem termino\n");
       exit(1);
     }
     makespan += tempo_execucao(msg.mtext);
@@ -120,7 +134,7 @@ char * buscar_info(int *tempoEspera, int *jobID, char *nomePrograma) {
 }
 
 char * time_to_string(time_t time) {
-   char buff[20];
+  char buff[20];
   struct tm * timeinfo;
   timeinfo = localtime (&time);
   strftime(buff, sizeof(buff), "%b %d %H:%M:%S", timeinfo);
@@ -135,7 +149,7 @@ int p_sem() {
   operacao[1].sem_op = 1;
   operacao[1].sem_flg = 0;
   if ( semop(idsem, operacao, 2) < 0)
-    printf("erro no p=%d\n", errno);
+    fprintf(stderr, "erro no p=%d\n", errno);
 }
 
 int v_sem() {
@@ -143,5 +157,24 @@ int v_sem() {
   operacao[0].sem_op = -1;
   operacao[0].sem_flg = 0;
   if ( semop(idsem, operacao, 1) < 0)
-    printf("erro no p=%d\n", errno);
+    fprintf(stderr, "erro no p=%d\n", errno);
+}
+
+// Função para liberar toda a memória
+void clear( int x ) {
+  // Seria bom chamar aqui a função para exibir as informações armazenadas pelo escalonador (makespan, etc)
+  // imprime_infos() ?
+
+  #ifdef DEBUG
+  printf( "\n[ESCALONADOR]\tLimpando filas e liberando memória...\n" );
+  #endif // DEBUG
+  
+  destroi_gerentes( gerentes_execucao );
+
+  // Destrói própria fila de mensagens
+  msgctl( escalonadorMsqID, IPC_RMID, NULL );
+  msgctl( executaPostergadoMsqID, IPC_RMID, NULL );
+
+  // Encerra com o código da interrupção
+  exit( x );
 }
