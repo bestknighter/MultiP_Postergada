@@ -27,4 +27,6 @@ typedef struct {
 
 gerente_init_t* cria_gerentes( int topologia );
 
+void executar_programa( int gerente0_msqID, int jobID, char* jobProgram );
+
 #endif // GERENTE_EXECUCAO_H

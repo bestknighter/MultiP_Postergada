@@ -246,3 +246,10 @@ gerente_init_t* cria_gerentes( int topologia ) {
 
 	return gerentes;
 }
+
+void executar_programa( int gerente0_msqID, int jobID, char* jobProgram ) {
+	struct msgBuf newMsg;
+	newMsg.mtype = MSG_START;
+	sprintf( newMsg.mtext, "%d %s %d", jobID, jobProgram, -1 );
+	msgsnd( gerente0_msqID, &newMsg, sizeof(newMsg.mtext), IPC_NOWAIT );
+}
