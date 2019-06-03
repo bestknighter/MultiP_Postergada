@@ -15,7 +15,7 @@ extern int escalonadorMsqID;
 typedef struct {
 	int jobID;
 	pid_t procPID;
-	char* program;
+	char program[64];
 	time_t start;
 	time_t end;
 } job_t;
@@ -53,6 +53,9 @@ void sendJob( int msqID, job_t job ) {
 void rcvJob( char* mtext ) {
 	job_t jobRecebido;
 	int IDSender = stringToJob( mtext, &jobRecebido );
+	#ifdef DEBUG
+	printf( "[GERENTE %d]\tRecebi job %d de %d\n", dados.self.id, jobRecebido.jobID, IDSender );
+	#endif // DEBUG
 	if( jobRecebido.jobID != jobAtual.jobID ) {
 		for(int i = 0; i < dados.nVizinhos; i++ ) {
 			if( dados.noVizinho[i].id == IDSender ) continue;
@@ -69,13 +72,22 @@ void end_exec() {
 	newMsg.mtype = MSG_END;
 	sprintf( newMsg.mtext, "%d %d %d %d", jobAtual.jobID, dados.self.id, (int)jobAtual.start, (int)jobAtual.end );
 	if( dados.self.id == 0 ) {
+    	#ifdef DEBUG
+	   	printf( "[GERENTE %d]\tTerminei de executar o job %d. Enviando mensagem: \"%s\" para o escalonador\n", dados.self.id, jobAtual.jobID, newMsg.mtext );
+	   	#endif // DEBUG
 		msgsnd( dados.escalonador.msqID, &newMsg, sizeof(newMsg.mtext), IPC_NOWAIT );
 	} else {
-		int vizinhoLowestID;
+		int vizinhoLowestID = 0;
 		int lowestID = 99;
 		for( int i = 0; i < dados.nVizinhos; i++ ) {
-			if( dados.noVizinho[i].id < lowestID ) vizinhoLowestID = i;
+			if( dados.noVizinho[i].id < lowestID ) {
+				vizinhoLowestID = i;
+				lowestID = dados.noVizinho[i].id;
+			}
 		}
+		#ifdef DEBUG
+	   	printf( "[GERENTE %d]\tTerminei de executar o job %d. Enviando mensagem: \"%s\" para o gerente %d\n", dados.self.id, jobAtual.jobID, newMsg.mtext, lowestID );
+	   	#endif // DEBUG
 		msgsnd( dados.noVizinho[vizinhoLowestID].msqID, &newMsg, sizeof(newMsg.mtext), IPC_NOWAIT );
 	}
 	dados.self.busy = 0;
@@ -88,11 +100,13 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 	jobAtual.jobID = -1;
 	jobAtual.procPID = 0;
 
-	printf( "Gerente %d iniciando execucao... Meus vizinhos sao", dados.self.id );
+    #ifdef DEBUG
+	printf( "[GERENTE %d]\tIniciando execucao... Meus vizinhos sao", dados.self.id );
 	for(int i = 0; i < dados.nVizinhos; i++ ) {
 		printf( " %d", dados.noVizinho[i].id );
 	}
 	printf( "\n" );
+	#endif // DEBUG
 	
 	while( 1 ) {
 		if( -1 < msgrcv( dados.self.msqID, &msg, 64, 0, IPC_NOWAIT ) ) {
@@ -100,13 +114,22 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 				rcvJob( msg.mtext );
 			} else if( MSG_END == msg.mtype ) {
 				if( dados.self.id == 0 ) {
+    				#ifdef DEBUG
+				   	printf( "[GERENTE %d]\tRecebi mensagem: \"%s\". Encaminhando para o escalonador\n", dados.self.id, msg.mtext );
+				   	#endif // DEBUG
 					msgsnd( dados.escalonador.msqID, &msg, sizeof(msg.mtext), IPC_NOWAIT );
 				} else {
-					int vizinhoLowestID;
+					int vizinhoLowestID = 0;
 					int lowestID = 99;
 					for( int i = 0; i < dados.nVizinhos; i++ ) {
-						if( dados.noVizinho[i].id < lowestID ) vizinhoLowestID = i;
+						if( dados.noVizinho[i].id < lowestID ) {
+    						vizinhoLowestID = i;
+    						lowestID = dados.noVizinho[i].id;
+						}
 					}
+					#ifdef DEBUG
+				   	printf( "[GERENTE %d]\tRecebi mensagem: \"%s\". Encaminhando para o gerente %d\n", dados.self.id, msg.mtext, lowestID );
+				   	#endif // DEBUG
 					msgsnd( dados.noVizinho[vizinhoLowestID].msqID, &msg, sizeof(msg.mtext), IPC_NOWAIT );
 				}
 			}
@@ -121,7 +144,7 @@ void gerente_loop( gerente_init_t* dadosIniciais, int myID) {
 
 gerente_init_t* cria_gerentes( int topologia ) {
 	if( topologia < HYPERCUBE || FAT_TREE < topologia ) {
-		fprintf( stderr, "[ERRO] Topologia desconhecida!\nExistentes: 0 - Hypercubo, 1 - Torus, 2 - Fat Tree.\nFornecida: %d\n\n", topologia );
+		fprintf( stderr, "[ERRO]\tTopologia desconhecida!\nExistentes: 0 - Hypercubo, 1 - Torus, 2 - Fat Tree.\nFornecida: %d\n\n", topologia );
 		return NULL;
 	}
 
@@ -138,7 +161,7 @@ gerente_init_t* cria_gerentes( int topologia ) {
 		gerentes[i].self.msqKey = 0x1233 + i;
 		gerentes[i].self.msqID = msgget( gerentes[i].self.msqKey, IPC_CREAT|0x1ff );
 		if( 0 > gerentes[i].self.msqID ) {
-			fprintf( stderr, "[ERRO] Erro na obtencao de fila para o gerente %d.\n\n", i );
+			fprintf( stderr, "[ERRO]\tErro na obtencao de fila para o gerente %d.\n\n", i );
 			free( gerentes );
 			return NULL;
 		}
