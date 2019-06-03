@@ -16,7 +16,7 @@ struct msgBuf {
 } msg; // Já cria uma variável global desse tipo
 
 int main( int argc, char *argv[ ] ) {
-	int msqid;
+	int executaPostergadoMsqID;
 	key_t key;
 	topologia = atoi(argv[1]);
 
@@ -27,8 +27,8 @@ int main( int argc, char *argv[ ] ) {
 		exit(1);
 	}
 
-	/*msg do executa postergado*/
-	if ((msqid = msgget(key, 0666)) < 0) {   //não pode executar antes de criar a fila, ou seja, antes do executa_postergado
+	/*busca a fila de mensagem do executa postergado*/
+	if ((executaPostergadoMsqID = msgget(key, 0666)) < 0) {   //não pode executar antes de criar a fila, ou seja, antes do executa_postergado
 		perror("msgget");
 		exit(1);
 	}
@@ -42,7 +42,7 @@ int main( int argc, char *argv[ ] ) {
 
     while (1) {
  		/*Receive an answer of message type 1.*/
-		if (msgrcv(msqid, &rbuf, MSGSZ, 1, 0) < 0) {
+		if (msgrcv(executaPostergadoMsqID, &rbuf, MSGSZ, 1, 0) < 0) {
 			perror("msgrcv");
 			exit(1);
 		}
@@ -52,18 +52,7 @@ int main( int argc, char *argv[ ] ) {
 		char *nomePrograma;
 
 		nomePrograma=buscar_info(&tempoEspera, &jobID, nomePrograma);
-
-		printf("tempo espera: %d\n", tempoEspera);
-		printf("nome programa: %s\n", nomePrograma);
-		printf("jobID: %d\n", jobID);
-
-
-		sleep(tempoEspera); //nao necessariamente que vai pegar o semaforo sera o primeiro da fila
-		//verificar se o processo é o primeiro da fila(criar uma queue) verifica quem é o primeiro da fila, se for igual ao jobID, pode executar, caso contrario, espera
-		/*
-		*/
-		/*
-		*/
+		sleep(tempoEspera);
 		//p_sem();
 			executar_programa(gerentes_execucao[0].self.msqID, jobID, nomePrograma);
 			double makespan = esperar_mensagens();	
@@ -80,14 +69,11 @@ double esperar_mensagens() {
 	int total_proc = (topologia == HYPERCUBE || topologia == TORUS) ? 16 : 15;
 
 	for(int i=0; i < total_proc; i++) {
-		printf("esperando mensagens");
 		if(msgrcv(escalonadorMsqID, &msg, sizeof(msg.mtext), MSG_END, 0) < 0) {
 			perror("msgrcv mensagem termino");
 			exit(1);
 		}
-		printf("mensagem recebida\n");
 		makespan += tempo_execucao(msg.mtext);
-		printf("makespan");
 	}
 	return makespan;	
 }
@@ -100,23 +86,16 @@ double tempo_execucao(char *msg) {
 
 	/*busca o jobID*/
 	char *ptr = strtok(msg, delim);
-	printf("Id: %s\n", ptr);
 	/*busca o gerenteID*/
 	ptr = strtok(NULL, delim);
-	printf("GerenteID: %s\n", ptr);
 	/*busca o time_t_comeco*/
 	ptr = strtok(NULL, delim);
 	int totalSegundosInicio = atoi(ptr);
 	time_t start = (time_t)totalSegundosInicio;
-	
-	//printf("Start: %s\n",time_to_string(start));
-
 	/*busca o time_t_fim*/
 	ptr = strtok(NULL, delim);
 	int totalSegundosFim = atoi(ptr);
 	time_t end = (time_t)totalSegundosFim;
-	
-	//printf("End: %s\n",time_to_string(end));
 
 	/*Calculates the difference in seconds between beginning and end  (time1 - time2).*/
 	return difftime(end, start);
