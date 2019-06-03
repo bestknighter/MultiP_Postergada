@@ -10,7 +10,7 @@ int escalonadorMsqID;
 int main( int argc, char *argv[ ] ) {
 	int msqid;
 	key_t key;
-	int topologia = atoi(argv[1]);
+	topologia = atoi(argv[1]);
 
 	key = 2234;
 
@@ -28,11 +28,11 @@ int main( int argc, char *argv[ ] ) {
 	if ((idsem = semget(0x1223, 1, IPC_CREAT|0x1ff)) < 0) {
     	printf("erro na criacao do sem\n");
      	exit(1);
-  }
+    }
 
 	gerente_init_t* gerentes_execucao = cria_gerentes(topologia);
 
-  while (1) {
+    while (1) {
  		/*Receive an answer of message type 1.*/
 		if (msgrcv(msqid, &rbuf, MSGSZ, 1, 0) < 0) {
 			perror("msgrcv");
@@ -45,7 +45,7 @@ int main( int argc, char *argv[ ] ) {
 		nomePrograma=buscar_info(&tempoEspera, &jobID, nomePrograma);
 
 		sleep(tempoEspera); //nao necessariamente que vai pegar o semaforo sera o primeiro da fila
-
+		//verificar se o processo é o primeiro da fila(criar uma queue) verifica quem é o primeiro da fila, se for igual ao jobID, pode executar, caso contrario, espera
 		p_sem();
 			executa_programa(jobID, nomePrograma); //funcao do gerente
 			double makespan = espera_mensagens(gerentes_execucao);	
@@ -58,8 +58,10 @@ int main( int argc, char *argv[ ] ) {
 /*retorna makespan*/
 double espera_mensagens(gerente_init_t* gerentes_execucao) {
 	double makespan = 0.0;
-	for(int i=0; i < 16; i++) {
-		if(msgrcv(gerentes_execucao[i].self.msqID, &msg_termino, MSGSZ, 1, 0) < 0) {
+	int total_proc = (topologia == HYPERCUBE || topologia == TORUS) ? 16 : 15;
+	for(int i=0; i < total_proc; i++) {
+		printf("esperando mensagens");
+		if(msgrcv(gerentes_execucao[i].self.msqID, &msg_termino, MSGSZ, MSG_START, 0) < 0) {
 			perror("msgrcv mensagem termino");
 			exit(1);
 		}

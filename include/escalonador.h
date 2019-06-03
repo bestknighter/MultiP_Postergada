@@ -19,6 +19,8 @@
 // Declare the message structure.
 #define MSGSZ 128
 
+int topologia;
+
 typedef struct msgbuf {
 	long mtype;
 	char mtext[MSGSZ];
@@ -28,7 +30,7 @@ message_buf rbuf;
 
 typedef struct msgTerminoGerentes {
 	long mtype;
-	char mtext[MSGSZ];
+	char mtext[64];
 } msg_termino_gerentes;
 
 msg_termino_gerentes msg_termino;
